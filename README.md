@@ -83,7 +83,7 @@ Then for each Department, we also add it as an option to our select field we’l
 
 If a department doesn’t have any job listings, we just ignore it.
 
-Next we call another function,` writeJobs`. Here, we use the ID’s we added to the array and make an API call to Greenhouse for each department. Then for each job listing, we clone an element in Webflow and pass through the job name and a link to the listing and add it to the corresponding section. We’re using Department ID to match the listing to the right section.
+Next we call another function, `writeJobs`. Here, we use the ID’s we added to the array and make an API call to Greenhouse for each department. Then for each job listing, we clone an element in Webflow and pass through the job name and a link to the listing and add it to the corresponding section. We’re using Department ID to match the listing to the right section.
 
 ```js
 function writeJobs() {
