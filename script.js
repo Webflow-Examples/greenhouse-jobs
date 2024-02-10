@@ -43,6 +43,9 @@ window.addEventListener("DOMContentLoaded", () => {
           sectionClone.id = department.id;
           sectionClone.querySelector('[data-gh="section-heading"]').innerText =
             department.name;
+          sectionClone
+            .querySelector('[data-gh="container"]')
+            .setAttribute("aria-label", department.name);
           domElements.root.appendChild(sectionClone);
           let option = new Option(department.name, department.id);
           domElements.jobFilter.add(option);
