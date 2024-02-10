@@ -1,108 +1,89 @@
-// Global variables defined here
-const departmentIds = [];
-const root = document.getElementById("root");
-const loading = document.getElementById("loading");
-const jobFilter = document.getElementById("filter");
-const errorWrapper = document.getElementById("errwrapper");
-const errorText = document.getElementById("errtext");
-
-// Filtering function for select element
-jobFilter.onchange = function () {
-  let selectedSection = this.value;
-  if (selectedSection == "all") {
-    let filtered = document.querySelectorAll(".department-section");
-    filtered.forEach((filtered) => {
-      filtered.style.display = "block";
-    });
-  } else {
-    let filtered = document.querySelectorAll(".department-section");
-    filtered.forEach((filtered) => {
-      filtered.style.display = "none";
-    });
-    document.getElementById(selectedSection).style.display = "block";
-  }
+// Global object to store DOM elements
+const domElements = {
+  root: document.querySelector('[data-gh="root"]'),
+  loading: document.querySelector('[data-gh="loading"]'),
+  jobFilter: document.querySelector('[data-gh="filter"]'),
+  placeHolder: document.querySelector('[data-gh="placeholder"]'),
+  sectionWrapper: document.querySelector('[data-gh="section-wrapper"]'),
+  sectionHeading: document.querySelector('[data-gh="section-heading"]'),
 };
 
-// Triggers when the DOM is ready
-window.addEventListener("DOMContentLoaded", (event) => {
-  const handleError = (response) => {
+const departmentIds = [];
+
+// Fetch function we'll use to get data from the Greenhouse endpoints
+const fetchData = (url) =>
+  fetch(url).then((response) => {
     if (!response.ok) {
       throw Error(` ${response.status} ${response.statusText}`);
-    } else {
-      return response.json();
     }
-  };
-  fetch(
-    "https://boards-api.greenhouse.io/v1/boards/" + ghSlug + "/departments/"
-  )
-    .then(handleError)
+    return response.json();
+  });
+
+// Filtering function for select element
+domElements.jobFilter.onchange = () => {
+  const selectedSection = domElements.jobFilter.value;
+  const sections = document.querySelectorAll('[data-gh="section-wrapper"]');
+  sections.forEach((section) => {
+    section.style.display =
+      selectedSection === "all" || section.id === selectedSection
+        ? "block"
+        : "none";
+  });
+};
+
+// When the DOM is ready, fetch the data and write it to the page
+// Start by showing the loader and getting the department data
+window.addEventListener("DOMContentLoaded", () => {
+  domElements.loading.classList.remove("hidden");
+  fetchData(`https://boards-api.greenhouse.io/v1/boards/${ghSlug}/departments/`)
     .then((data) => {
       data.departments.forEach((department) => {
-        if (department.jobs.length !== 0) {
+        if (department.jobs.length > 0) {
           departmentIds.push(department.id);
-          let sectionWrapper = document.getElementById("section");
-          let sectionClone = sectionWrapper.cloneNode(true);
+          let sectionClone = domElements.sectionWrapper.cloneNode(true);
           sectionClone.id = department.id;
-          root.appendChild(sectionClone);
-          let option = document.createElement("option");
-          option.text = department.name;
-          option.value = department.id;
-          jobFilter.add(option);
-        } else {
-          null;
+          sectionClone.querySelector('[data-gh="section-heading"]').innerText =
+            department.name;
+          domElements.root.appendChild(sectionClone);
+          let option = new Option(department.name, department.id);
+          domElements.jobFilter.add(option);
         }
       });
     })
-    .catch(function writeError(err) {
-      console.error(err);
-    })
-    .finally(() => {
-      writeJobs();
-    });
+    .catch(console.error)
+    .finally(writeJobs);
 });
+
 // Triggered in finally above
+// Writes all the jobs to the page
 function writeJobs() {
   departmentIds.forEach((departmentId) => {
-    const handleError = (response) => {
-      if (!response.ok) {
-        throw Error(` ${response.status} ${response.statusText}`);
-      } else {
-        return response.json();
-      }
-    };
-    fetch(
-      "https://boards-api.greenhouse.io/v1/boards/" +
-        ghSlug +
-        "/departments/" +
-        departmentId
+    fetchData(
+      `https://boards-api.greenhouse.io/v1/boards/${ghSlug}/departments/${departmentId}`
     )
-      .then(handleError)
       .then((data) => {
         let parent = document.getElementById(data.id);
-        let parentContainer = parent.getElementsByClassName("container")[0];
-        let sectionHeading = document.getElementById("dname");
-        let sectionTitle = sectionHeading.cloneNode(true);
-        sectionTitle.innerText = data.name;
-        parentContainer.appendChild(sectionTitle);
+        let parentContainer = parent.querySelector('[data-gh="container"]');
         data.jobs.forEach((job) => {
-          let listing = document.getElementById("listing");
-          let ghListing = listing.cloneNode(true);
+          let ghListing = parentContainer
+            .querySelector('[data-gh="listing"]')
+            .cloneNode(true);
           ghListing.id = job.id;
-          let jobTitle = ghListing.getElementsByClassName("job-title")[0];
+          let jobTitle = ghListing.querySelector('[data-gh="job-title"]');
           jobTitle.innerText = job.title;
           jobTitle.setAttribute("href", job.absolute_url);
-          let jobLocation = ghListing.getElementsByClassName("job-location")[0];
-          jobLocation.innerText = job.location.name;
+          ghListing.querySelector('[data-gh="job-location"]').innerText =
+            job.location.name;
           parentContainer.appendChild(ghListing);
         });
+        parentContainer.querySelector('[data-gh="listing"]').remove();
       })
-      .catch(function writeError(err) {
-        console.error(err);
-      })
+      .catch(console.error)
       .finally(() => {
-        loading.classList.add("invisible");
-        loading.remove();
-        root.classList.add("visible");
+        domElements.loading.classList.add("hidden");
+        domElements.loading.remove();
+        domElements.placeHolder.remove();
+        domElements.root.classList.remove("hidden");
       });
   });
 }
