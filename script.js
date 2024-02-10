@@ -5,7 +5,6 @@ const domElements = {
   jobFilter: document.querySelector('[data-gh="filter"]'),
   placeHolder: document.querySelector('[data-gh="placeholder"]'),
   sectionWrapper: document.querySelector('[data-gh="section-wrapper"]'),
-  sectionHeading: document.querySelector('[data-gh="section-heading"]'),
 };
 
 const departmentIds = [];
