@@ -4,13 +4,85 @@ Use JavaScript, Webflow, and the Greenhouse jobs API to list open positions on y
 
 Clone an example site from Made in Webflow:
 
-https://webflow.com/made-in-webflow/website/greenhouse-job-board-with-js
+https://webflow.com/made-in-webflow/website/greenhouse-jobs-attr
 
 A common tool that Webflow users work with is Greenhouse Jobs. Greenhouse is an applicant tracking system and job board with many powerful features.
 
 # Using fetch api to write jobs on page load
 
 In Webflow, it can be challenging to use fetch since there’s no way to hide a secret key. The good news is that Greenhouse doesn’t require any keys to fetch job listings. First, in the project on the page where we’re calling our jobs we set a variable that is a string of our slug where our jobs are found in Greenhouse.
+
+## Implementing this on your own site
+
+To implement this on your own site, you need to ensure you have the proper setup and structure on your Webflow site. You can see a visual of this on the [How it works page of our cloneable](https://greenhouse-jobs-attr.webflow.io/how-it-works).
+
+You'll need the following structure:
+
+- A form element with a select field
+  - it should have an custom attribute of `data-gh="filter"`
+  - it should have one option for All teams with a value of all
+- A section with a loading animation
+  - it should have an atrribute of `data-gh="loading"`
+  - this div should have a combo class of `hidden` which sets the opacity to `0`
+  - our code will remove this combo class when the page loads
+- A div with an attribute of `data-gh="root"`
+  - this should be a sibling of the loading element
+  - this is where all of our department sections will be added
+  - this div should have a combo class of `hidden` which sets the opacity to `0`
+  - our code will remove this combo class when the page loads
+- A template section we'll use to clone for each department
+  - it should have an attribute of `data-gh="section-wrapper"`
+  - inside the section should be a heading with an attribute of `data-gh="section-heading"`
+  - inside the section should be an unordered list with an attribute of `data-gh="container"`
+  - inside the list should be a list item with an attribute of `gh-data="listing"`
+  - inside the list item should be two elements
+    - a text link or link element with an attribute of `data-gh="job-title"`
+      - this element also has an attribute of `data-label="role"`
+    - a text element with an attribute of `data-gh="location"`
+      - this element also has an attribute of `data-label="location"`
+
+In our example, the extra attributes are used to add labels for mobile using some custom CSS and `::before`.
+
+```html
+<style>
+  @media screen and (max-width: 767px) {
+    [data-label="role"]::before {
+      content: attr(data-label) ": ";
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    [data-label="location"]::before {
+      content: attr(data-label) ": ";
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+  }
+</style>
+```
+
+Once you have the structure complete you just need to add the JavaScript to the before `</body>` custom code section in your page settings.
+
+```html
+<script>
+  const ghSlugh = "webflow"; //replace with your own orgs slug
+</script>
+<script
+  src="https://cdn.jsdelivr.net/gh/webflow-examples/greenhouse-jobs@greenhouse-webflow/script.js"
+  type="text/javascript"
+></script>
+```
+
+Or for the minified version you can use
+
+```html
+<script>
+  const ghSlugh = "webflow"; //replace with your own orgs slug
+</script>
+<script
+  src="https://cdn.jsdelivr.net/gh/webflow-examples/greenhouse-jobs@greenhouse-webflow/script.min.js"
+  type="text/javascript"
+></script>
+```
 
 ## Code walkthrough
 
@@ -39,7 +111,7 @@ The global variables are:
 - placeHolder - an element that holds the section for each department that we'll clone
 - sectionWrapper - the section we'll clone for each department
 
-Next, let’s tackle our page load function. When the page is loaded, we’ll make an API call to Greenhouse. This is a call to get all the departments. Then for each department we add the id to our global id array. Then we clone a section that’s built in Webflow and add it to the root and give it an id that matches the Department ID. We also pass in the title of our department to our section heading in this section. In our [example site](https://webflow.com/made-in-webflow/website/greenhouse-job-board-with-js), you can see this section is in a div with a class of `placeholder` which is set to `display: none;`.
+Next, let’s tackle our page load function. When the page is loaded, we’ll make an API call to Greenhouse. This is a call to get all the departments. Then for each department we add the id to our global id array. Then we clone a section that’s built in Webflow and add it to the root and give it an id that matches the Department ID. We also pass in the title of our department to our section heading in this section. In our [example site](https://webflow.com/made-in-webflow/website/greenhouse-jobs-attr), you can see this section is in a div with a class of `placeholder` which is set to `display: none;`.
 
 ```js
 window.addEventListener("DOMContentLoaded", () => {
@@ -53,6 +125,9 @@ window.addEventListener("DOMContentLoaded", () => {
           sectionClone.id = department.id;
           sectionClone.querySelector('[data-gh="section-heading"]').innerText =
             department.name;
+          sectionClone
+            .querySelector('[data-gh="container"]')
+            .setAttribute("aria-label", department.name);
           domElements.root.appendChild(sectionClone);
           let option = new Option(department.name, department.id);
           domElements.jobFilter.add(option);
@@ -107,7 +182,7 @@ function writeJobs() {
 
 Finally, we remove a class to the job listings to make them visible, and we add a class to fade out the loading element and then remove it from the DOM.
 
-The upside of using cloneNode means that we can build the elements and style them in Webflow and then just hide them from view. It’s what we’re doing in our [example](https://webflow.com/made-in-webflow/website/greenhouse-job-board-with-js).
+The upside of using cloneNode means that we can build the elements and style them in Webflow and then just hide them from view. It’s what we’re doing in our [example](https://webflow.com/made-in-webflow/website/greenhouse-jobs-attr).
 
 The pros of this approach is that the listings are always current. Again, it empowers your people and recruiting team to quickly update the listings and make changes without having access to your Webflow site.
 
